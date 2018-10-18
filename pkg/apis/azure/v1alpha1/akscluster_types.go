@@ -11,12 +11,20 @@ import (
 type AKSClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	DiskSize            int32  `json:"diskSize,omitempty"`
+	MachineType         string `json:"machineType,omitempty"`
+	NumNodes            int32  `json:"numNodes,omitempty"`
+	ClusterVersion      string `json:"clusterVersion,omitempty"`
+	Zone                string `json:"zone"`
 }
 
 // AKSClusterStatus defines the observed state of AKSCluster
 type AKSClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	Status      string `json:"status,omitempty"`
+	Message     string `json:"message,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
