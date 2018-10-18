@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 
+	"github.com/sirupsen/logrus"
+
 	azurev1alpha1 "github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis/azure/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -95,6 +97,18 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	log := logrus.WithFields(logrus.Fields{
+		"namespace": ns.Namespace,
+		"name":      ns.Name,
+	})
+
+	delTimestamp := instance.GetDeletionTimestamp()
+	if delTimestamp != nil {
+		log.Info("deleted")
+	} else {
+		log.Info("added")
 	}
 
 	// Define a new Pod object
