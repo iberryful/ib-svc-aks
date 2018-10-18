@@ -8,9 +8,7 @@ import (
 
 	azurev1alpha1 "github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis/azure/v1alpha1"
 	"github.com/satori/go.uuid"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -111,7 +109,7 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-func deleteAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) error {
+func deleteAKSCluster(r *ReconcileAKSCluster, cr *azurev1alpha1.AKSCluster, log *logrus.Entry) error {
 	cr.Status.Status = "pending"
 	cr.Status.Message = "deleting"
 
