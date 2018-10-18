@@ -7,8 +7,8 @@ import (
 
 	k8sutil "github.com/operator-framework/operator-sdk/pkg/util/k8sutil"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
-	"github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis"
-	"github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/controller"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/controller"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
