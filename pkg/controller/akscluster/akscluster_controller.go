@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	azurev1alpha1 "github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis/azure/v1alpha1"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis/azure/v1alpha1"
 	"github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,7 +73,7 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	log.Printf("Reconciling AKSCluster %s/%s\n", request.Namespace, request.Name)
 
 	// Fetch the AKSCluster instance
-	cr := &azurev1alpha1.AKSCluster{}
+	cr := &v1alpha1.AKSCluster{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, cr)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -108,7 +108,7 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-func deleteAKSCluster(r *ReconcileAKSCluster, cr *azurev1alpha1.AKSCluster, log *logrus.Entry) error {
+func deleteAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) error {
 	cr.Status.Status = "pending"
 	cr.Status.Message = "deleting"
 
