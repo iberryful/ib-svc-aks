@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis/azure/v1alpha1"
 )
 
 /**
