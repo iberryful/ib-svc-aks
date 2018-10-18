@@ -7,6 +7,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	azurev1alpha1 "github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis/azure/v1alpha1"
+	"github.com/satori/go.uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,16 +52,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner AKSCluster
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &azurev1alpha1.AKSCluster{},
-	})
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -86,8 +77,8 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	log.Printf("Reconciling AKSCluster %s/%s\n", request.Namespace, request.Name)
 
 	// Fetch the AKSCluster instance
-	instance := &azurev1alpha1.AKSCluster{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	cr := &azurev1alpha1.AKSCluster{}
+	err := r.client.Get(context.TODO(), request.NamespacedName, cr)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -100,43 +91,28 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	log := logrus.WithFields(logrus.Fields{
-		"namespace": instance.Namespace,
-		"name":      instance.Name,
+		"namespace": cr.Namespace,
+		"name":      cr.Name,
 	})
 
-	delTimestamp := instance.GetDeletionTimestamp()
+	delTimestamp := cr.GetDeletionTimestamp()
 	if delTimestamp != nil {
 		log.Info("deleted")
 	} else {
-		log.Info("added")
-	}
-
-	// Define a new Pod object
-	pod := newPodForCR(instance)
-
-	// Set AKSCluster instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating a new Pod %s/%s\n", pod.Namespace, pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
+		finalizers := cr.GetFinalizers()
+		if len(finalizers) == 0 {
+			cr.SetFinalizers([]string{"azure.service.infrabox.net"})
+			cr.Status.Status = "pending"
+			u := uuid.NewV4()
+			cr.Status.ClusterName = "ib-" + u.String()
+			err := r.client.Update(cr)
+			if err != nil {
+				log.Errorf("Failed to set finalizers: %v", err)
+				return reconcile.Result{}, nil
+			}
 		}
-
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
 	}
 
-	// Pod already exists - don't requeue
-	log.Printf("Skip reconcile: Pod %s/%s already exists", found.Namespace, found.Name)
 	return reconcile.Result{}, nil
 }
 
