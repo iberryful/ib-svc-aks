@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aks
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: aks
+  template:
+    metadata:
+      labels:
+        name: aks
+    spec:
+      serviceAccountName: aks
+      containers:
+        - name: aks
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          ports:
+          - containerPort: 60000
+            name: metrics
+          command:
+          - aks
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: OPERATOR_NAME
+              value: "aks"
