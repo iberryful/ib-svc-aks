@@ -319,14 +319,6 @@
   version = "v1.0.3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:544ec5ae707f9908108b8386eb367a5bfc73ed9899d3d3a86f94c041799c1722"
-  name = "github.wdf.sap.corp/i349934/ib-svc-aks"
-  packages = ["pkg/apis/azure/v1alpha1"]
-  pruneopts = "NT"
-  revision = "880dd88c2fa9776c44dd650246272d6c88a172bb"
-
-[[projects]]
   digest = "1:22f696cee54865fb8e9ff91df7b633f6b8f22037a8015253c6b6a71ca82219c7"
   name = "go.uber.org/atomic"
   packages = ["."]
@@ -752,8 +744,6 @@
     "github.com/operator-framework/operator-sdk/version",
     "github.com/satori/go.uuid",
     "github.com/sirupsen/logrus",
-    "github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis/azure/v1alpha1",
-    "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime",
