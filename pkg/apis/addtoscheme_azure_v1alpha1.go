@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/apis/azure/v1alpha1"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis/azure/v1alpha1"
 )
 
 func init() {

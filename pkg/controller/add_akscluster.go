@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.wdf.sap.corp/i349934/ib-svc-aks/aks/pkg/controller/akscluster"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/controller/akscluster"
 )
 
 func init() {
