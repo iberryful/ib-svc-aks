@@ -105,7 +105,7 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 			cr.Status.Status = "pending"
 			u := uuid.NewV4()
 			cr.Status.ClusterName = "ib-" + u.String()
-			err := r.client.Update(cr)
+			err := r.client.Update(context.TODO() , cr)
 			if err != nil {
 				log.Errorf("Failed to set finalizers: %v", err)
 				return reconcile.Result{}, nil
