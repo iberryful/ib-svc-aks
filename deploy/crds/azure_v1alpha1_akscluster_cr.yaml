@@ -1,0 +1,7 @@
+apiVersion: azure.service.infrabox.net/v1alpha1
+kind: AKSCluster
+metadata:
+  name: example-akscluster
+spec:
+  # Add fields here
+  size: 3
