@@ -18,6 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"github.wdf.sap.corp/i349934/ib-svc-aks/pkg/apis/azure/v1alpha1"
 )
 
 /**
@@ -79,12 +80,8 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	err := r.client.Get(context.TODO(), request.NamespacedName, cr)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
 			return reconcile.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
 
@@ -95,7 +92,7 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 
 	delTimestamp := cr.GetDeletionTimestamp()
 	if delTimestamp != nil {
-		log.Info("deleted")
+		deleteAKSCluster(r, cr, log)
 	} else {
 		finalizers := cr.GetFinalizers()
 		if len(finalizers) == 0 {
@@ -114,25 +111,36 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *azurev1alpha1.AKSCluster) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
+func deleteAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) error {
+	cr.Status.Status = "pending"
+	cr.Status.Message = "deleting"
+
+	err := r.client.Update(context.TODO(), cr)
+	if err != nil {
+		log.Errorf("Failed to update status: %v", err)
+		return err
 	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
+
+	//TODO: get cluster  status
+	//TODO: delete cluster
+	//TODO: delete secret
+
+	cr.SetFinalizers([]string{})
+	err = r.client.Update(context.TODO(), cr)
+	if err != nil {
+		log.Errorf("Failed to remove finalizers: %v", err)
+		return err
 	}
+
+	err = r.client.Delete(context.TODO(), cr)
+	if err != nil && !errors.IsNotFound(err) {
+		log.Errorf("Failed to delete cr: %v", err)
+		return err
+	}
+
+	log.Info("AKSCluster deleted")
+
+	return nil
 }
+
+// newPodForCR returns a busybox pod with the same name/namespace as the cr
