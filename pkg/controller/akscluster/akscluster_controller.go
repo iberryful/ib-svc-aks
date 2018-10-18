@@ -43,7 +43,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource AKSCluster
-	err = c.Watch(&source.Kind{Type: v1alpha1.AKSCluster{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &v1alpha1.AKSCluster{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
