@@ -100,8 +100,8 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	log := logrus.WithFields(logrus.Fields{
-		"namespace": ns.Namespace,
-		"name":      ns.Name,
+		"namespace": instance.Namespace,
+		"name":      instance.Name,
 	})
 
 	delTimestamp := instance.GetDeletionTimestamp()
