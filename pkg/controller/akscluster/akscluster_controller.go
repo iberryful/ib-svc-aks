@@ -199,7 +199,7 @@ func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus
 }
 
 func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
-	cmd := exec.Command("az aks show --name ", name, "--resource-group ", name)
+	cmd := exec.Command("az", "aks", "show", "--name ", name, "--resource-group ", name)
 	out, err := cmd.Output()
 	if err != nil {
 		log.Errorf("Could not show clusters: %v", err)
@@ -214,7 +214,7 @@ func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
 		return nil, err
 	}
 
-	return &gkeclusters, nil
+	return &aksCluster, nil
 }
 
 func deleteAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) error {
