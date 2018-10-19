@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"time"
+	"strings"
 )
 
 /**
@@ -202,8 +203,12 @@ func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
 	cmd := exec.Command("az", "aks", "show", "--name ", name, "--resource-group ", name)
 	out, err := cmd.Output()
 	if err != nil {
-		log.Errorf("Could not show clusters: %v", err)
-		return nil, err
+		if strings.Contains(string(out), "not found") {
+			return nil, nil
+		} else {
+			log.Errorf("Could not show clusters: %v", err)
+			return nil, err
+		}
 	}
 
 	var aksCluster RemoteCluster
