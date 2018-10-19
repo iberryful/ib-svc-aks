@@ -16,12 +16,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"os/exec"
+	"encoding/json"
+	"strconv"
+	"time"
 )
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
+
+type RemoteCluster struct {
+	Name     string	`json:"name"`
+	Status   string `json:"provisioningState"`
+	Endpoint string `json:"fqdn"`
+}
 
 // Add creates a new AKSCluster Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -91,21 +101,120 @@ func (r *ReconcileAKSCluster) Reconcile(request reconcile.Request) (reconcile.Re
 	if delTimestamp != nil {
 		deleteAKSCluster(r, cr, log)
 	} else {
-		finalizers := cr.GetFinalizers()
-		if len(finalizers) == 0 {
-			cr.SetFinalizers([]string{"azure.service.infrabox.net"})
-			cr.Status.Status = "pending"
-			u := uuid.NewV4()
-			cr.Status.ClusterName = "ib-" + u.String()
-			err := r.client.Update(context.TODO() , cr)
-			if err != nil {
-				log.Errorf("Failed to set finalizers: %v", err)
-				return reconcile.Result{}, nil
+		status, err := syncAKSCluster(r, cr, log)
+
+		if err != nil {
+			cr.Status.Status = "error"
+			cr.Status.Message = err.Error()
+			err = r.client.Update(context.TODO(), cr)
+			return reconcile.Result{}, err
+		} else {
+			log.Info("status:", status.Status, "msg:", status.Message)
+			if cr.Status.Status != status.Status || cr.Status.Message != status.Message {
+				cr.Status = *status
+				err = r.client.Update(context.TODO(), cr)
+				return reconcile.Result{Requeue:true, RequeueAfter:time.Duration(10 * time.Second)}, err
 			}
 		}
 	}
 
 	return reconcile.Result{}, nil
+}
+
+func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) (*v1alpha1.AKSClusterStatus, error) {
+	if cr.Status.Status == "ready" || cr.Status.Status == "error" {
+		return &cr.Status, nil
+	}
+
+	finalizers := cr.GetFinalizers()
+	if len(finalizers) == 0 {
+		cr.SetFinalizers([]string{"azure.service.infrabox.net"})
+		cr.Status.Status = "pending"
+		u := uuid.NewV4()
+		cr.Status.ClusterName = "ib-" + u.String()
+		err := r.client.Update(context.TODO(), cr)
+		if err != nil {
+			log.Errorf("Failed to set finalizers: %v", err)
+			return nil, nil
+		}
+	}
+
+	aksCluster, err := getRemoteCluster(cr.Status.ClusterName, log)
+	if err != nil && !errors.IsNotFound(err) {
+		log.Errorf("Could not get GKE Cluster: %v", err)
+		return nil, err
+	}
+
+	if aksCluster == nil {
+		args := []string{"aks", "create",
+			"name", cr.Status.ClusterName,
+			"--no-wait",
+			"--no-ssh-key",
+			"--location", cr.Spec.Zone,
+		}
+
+		if cr.Spec.DiskSize != 0 {
+			args = append(args, "--node-osdisk-size")
+			args = append(args, strconv.Itoa(int(cr.Spec.DiskSize)))
+		}
+
+		if cr.Spec.MachineType != "" {
+			args = append(args, "--node-vm-size")
+			args = append(args, cr.Spec.MachineType)
+		}
+
+		if cr.Spec.NumNodes != 0 {
+			args = append(args, "--node-count")
+			args = append(args, strconv.Itoa(int(cr.Spec.NumNodes)))
+		}
+
+		if cr.Spec.ClusterVersion != "" {
+			args = append(args, "--kubernetes-version")
+			args = append(args, cr.Spec.MachineType)
+		}
+
+		cmd := exec.Command("az", args...)
+		out, err := cmd.Output()
+
+		if err != nil {
+			log.Errorf("Failed to create AKS Cluster: %v", err)
+			log.Error(string(out))
+			return nil, err
+		}
+
+		status := cr.Status
+		status.Status = "pending"
+		status.Message = "Cluster is being created"
+		return &status, nil
+	} else {
+		if aksCluster.Status == "Succeeded" {
+			status := cr.Status
+			status.Status = "ready"
+			status.Message = "Cluster ready"
+			return &status, nil
+		}
+	}
+
+	return &cr.Status, nil
+}
+
+func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
+	cmd := exec.Command("az aks show --name ", name, "--resource-group ", name)
+	out, err := cmd.Output()
+	if err != nil {
+		log.Errorf("Could not show clusters: %v", err)
+		return nil, err
+	}
+
+	var aksCluster RemoteCluster
+	err = json.Unmarshal(out, &aksCluster)
+
+	if err != nil {
+		log.Errorf("Could not parse cluster list: %v", err)
+		return nil, err
+	}
+
+	return &gkeclusters, nil
 }
 
 func deleteAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus.Entry) error {
