@@ -141,7 +141,7 @@ func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus
 
 	aksCluster, err := getRemoteCluster(cr.Status.ClusterName, log)
 	if err != nil && !errors.IsNotFound(err) {
-		log.Errorf("Could not get GKE Cluster: %v", err)
+		log.Errorf("Could not get AKS Cluster: %v", err)
 		return nil, err
 	}
 
