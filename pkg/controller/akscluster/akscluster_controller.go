@@ -147,15 +147,16 @@ func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus
 	}
 
 	if aksCluster == nil {
-		cmd := exec.Command("az", "group", "create", "--name", cr.Name, "--location", cr.Spec.Zone)
+		cmd := exec.Command("az", "group", "create", "--name", cr.Status.ClusterName, "--location", cr.Spec.Zone)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Errorf("Could not create AKS cluster: %v", err)
-			return nil, err
+			return nil, errors.New(string(out))
 		}
 
 		args := []string{"aks", "create",
-			"name", cr.Status.ClusterName,
+			"--name", cr.Status.ClusterName,
+			"--resource-group", cr.Status.ClusterName,
 			"--no-wait",
 			"--no-ssh-key",
 			"--location", cr.Spec.Zone,
@@ -216,7 +217,7 @@ func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
 
 	if strings.Contains(string(out), "false") {
 		//cluster is not created
-		log.Info("Cluster was not found. Starting creating")
+		log.Info("Cluster %v was not found. Starting creating", name)
 		return nil, nil
 	}
 
