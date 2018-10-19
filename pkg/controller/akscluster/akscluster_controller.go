@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"time"
-	"strings"
 )
 
 /**
@@ -200,15 +199,23 @@ func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus
 }
 
 func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
-	cmd := exec.Command("az", "aks", "show", "--name ", name, "--resource-group ", name)
+	cmd := exec.Command("az", "group", "exists", "--name", name)
 	out, err := cmd.Output()
 	if err != nil {
-		if strings.Contains(string(out), "not found") {
-			return nil, nil
-		} else {
-			log.Errorf("Could not show clusters: %v", err)
-			return nil, err
-		}
+		log.Errorf("Could not get resource group. %v", err, "|", string(out))
+		return nil, err
+	}
+
+	if string(out) == "false" {
+		//cluster is not created
+		return nil, nil
+	}
+
+	cmd = exec.Command("az", "aks", "show", "--name ", name, "--resource-group ", name)
+	out, err = cmd.Output()
+	if err != nil {
+		log.Errorf("Could not show clusters: %v", err)
+		return nil, err
 	}
 
 	var aksCluster RemoteCluster
