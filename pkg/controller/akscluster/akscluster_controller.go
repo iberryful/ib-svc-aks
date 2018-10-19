@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"time"
+	"strings"
 )
 
 /**
@@ -206,8 +207,9 @@ func getRemoteCluster(name string, log *logrus.Entry) (*RemoteCluster, error) {
 		return nil, err
 	}
 
-	if string(out) == "false" {
+	if strings.Contains(string(out), "false") {
 		//cluster is not created
+		log.Info("Cluster was not found. Starting creating")
 		return nil, nil
 	}
 
