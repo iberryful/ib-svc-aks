@@ -131,9 +131,8 @@ func syncAKSCluster(r *ReconcileAKSCluster, cr *v1alpha1.AKSCluster, log *logrus
 	if len(finalizers) == 0 {
 		cr.SetFinalizers([]string{"azure.service.infrabox.net"})
 		cr.Status.Status = "pending"
-		u := uuid.NewV4().Bytes()
-		u = u[:18]
-		cr.Status.ClusterName = "ib-" + string(u)
+		u := uuid.NewV4()
+		cr.Status.ClusterName = "ib-" + string([]byte(u.String())[:18])
 		err := r.client.Update(context.TODO(), cr)
 		if err != nil {
 			log.Errorf("Failed to set finalizers: %v", err)
